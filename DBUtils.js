@@ -1,5 +1,7 @@
 import SQLite from "react-native-sqlite-storage";
 
+import _ from "lodash";
+
 open = (dbparams) => {
 
     let result = SQLite.openDatabase({ name: dbparams.name, createFromLocation: dbparams.createFromLocation });
@@ -25,8 +27,8 @@ query = (db, sql, params) => {
                     result.push(rs.rows.item(i));
                 }
 
-                resolve({result});
-            }, (err) => { });
+                resolve({ result });
+            }, (err) => { console.log("Error in transaction") });
 
 
         });
@@ -34,4 +36,42 @@ query = (db, sql, params) => {
 
 }
 
-export { open, close, query };
+query = (db, sql, params, resultTransformer) => {
+
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+
+            tx.executeSql(sql, params, (tx, rs) => {
+
+                let result = resultTransformer(rs);
+                resolve({ result });
+
+            }, (err) => { console.log("Error in transaction") });
+
+
+        });
+    });
+}
+
+// not tested yet!
+execute = (db, sql, params) => {
+
+    return new Promise((resolve, reject) => {
+        db.transaction((txt) => {
+            tx.executeSql(sql, params, (tx, rs) => {
+                let rowsAffected = rs.rowsAffected;
+
+                resolve({ rowsAffected });
+            })
+        }, (err) => {
+            console.log("Error in transaction");
+        });
+    });
+
+}
+
+close = (db) => {
+    db.close();
+}
+
+export { open, close, query, execute };
